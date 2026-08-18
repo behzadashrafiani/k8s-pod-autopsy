@@ -71,6 +71,18 @@ func processLogs(raw string) (errs, lines []string) {
 	return detectErrors(all), dedupLines(all)
 }
 
+// logUnavailableRe matches the sentinel body the kubelet returns with HTTP 200
+// (not an error status) when a container's logs are no longer retrievable —
+// e.g. a previous instance whose logs have rotated off disk.
+var logUnavailableRe = regexp.MustCompile(`^unable to retrieve container logs for \S+$`)
+
+// logBodyUnavailable reports whether a 200-status log body actually carries no
+// usable logs, so callers can fall back to the current instance.
+func logBodyUnavailable(body string) bool {
+	trimmed := strings.TrimSpace(body)
+	return trimmed == "" || logUnavailableRe.MatchString(trimmed)
+}
+
 // fetchContainerLog reads a container's log tail. previous=true reads the
 // crashed instance's logs. Thin by design; parsing is tested via processLogs.
 func fetchContainerLog(ctx context.Context, kube kubernetes.Interface, ns, pod, container string, previous bool) (string, error) {
@@ -84,10 +96,13 @@ func fetchContainerLog(ctx context.Context, kube kubernetes.Interface, ns, pod, 
 	if err != nil {
 		return "", err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	b, err := io.ReadAll(rc)
 	if err != nil {
 		return "", err
+	}
+	if body := string(b); logBodyUnavailable(body) {
+		return "", fmt.Errorf("no logs available for container %q", container)
 	}
 	return string(b), nil
 }

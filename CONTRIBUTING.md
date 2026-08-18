@@ -25,6 +25,21 @@ Tests run against fake clientsets — no cluster required. Please add a test wit
 - Keep PRs focused; explain the "why" in the description.
 - CI must be green (`go test ./...` + `golangci-lint`).
 
+## Regenerating the README demo GIF
+
+The GIF at `docs/demo/autopsy.gif` is recorded from **real** output against a
+throwaway [kind](https://kind.sigs.k8s.io/) cluster — never hand-faked. To
+regenerate it you need [`vhs`](https://github.com/charmbracelet/vhs) and `kind`:
+
+```bash
+kind create cluster --name autopsy-demo
+kubectl apply -f docs/demo/workloads.yaml   # OOM / crashloop / imagepull pods
+go build -o autopsy ./cmd/autopsy
+# wait ~1min for pods to reach their failure states, then:
+vhs docs/demo/autopsy.tape
+kind delete cluster --name autopsy-demo
+```
+
 ## Regenerating the tiktoken vocab cache
 
 The benchmark reads a committed cl100k_base vocab so CI stays offline. If it is ever missing:

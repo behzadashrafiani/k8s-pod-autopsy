@@ -28,7 +28,8 @@ func main() {
 	kubeconfig := fs.String("kubeconfig", "", "path to kubeconfig")
 	kubeContext := fs.String("context", "", "kube context")
 	noColor := fs.Bool("no-color", false, "disable ANSI color")
-	_ = fs.Parse(os.Args[2:])
+	posArgs, err := parseInterspersed(fs, os.Args[2:])
+	exitOnErr(err)
 
 	styler := chooseStyler(*noColor)
 	ctx := context.Background()
@@ -45,14 +46,14 @@ func main() {
 	switch cmd {
 	case "triage":
 		clients := mustClients(*kubeconfig, *kubeContext)
-		name := fs.Arg(0)
+		name := firstArg(posArgs)
 		requirePod(name, *ns)
 		rep, err := triage.AutopsyPod(ctx, clients.Kube, clients.Metrics, *ns, name)
 		exitOnErr(err)
 		fmt.Println(render.PodReport(rep, styler))
 	case "saturation":
 		clients := mustClients(*kubeconfig, *kubeContext)
-		name := fs.Arg(0)
+		name := firstArg(posArgs)
 		requirePod(name, *ns)
 		rep := triage.CheckSaturation(ctx, clients.Kube, clients.Metrics, *ns, name)
 		fmt.Println(render.Saturation(rep, styler))
@@ -65,6 +66,33 @@ func main() {
 		usage()
 		os.Exit(2)
 	}
+}
+
+// parseInterspersed parses flags that may appear before, after, or between
+// positional arguments. The stdlib flag.Parse stops at the first
+// non-flag token, so `triage web-1 -n demo` would leave `-n demo` unparsed;
+// this repeatedly parses, peels off leading positionals, and resumes until
+// no tokens remain. Returns the collected positionals in order.
+func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
+	var positionals []string
+	for {
+		if err := fs.Parse(args); err != nil {
+			return nil, err
+		}
+		rest := fs.Args()
+		if len(rest) == 0 {
+			return positionals, nil
+		}
+		positionals = append(positionals, rest[0])
+		args = rest[1:]
+	}
+}
+
+func firstArg(args []string) string {
+	if len(args) == 0 {
+		return ""
+	}
+	return args[0]
 }
 
 func mustClients(kubeconfig, kubeContext string) *k8s.Clients {

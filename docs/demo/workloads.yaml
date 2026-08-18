@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+# OOMKilled: reads /dev/zero into memory forever against a tiny limit
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-1
+  namespace: demo
+  labels: { app: web }
+spec:
+  restartPolicy: Always
+  containers:
+    - name: web
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'serving traffic'; tail /dev/zero"]
+      resources:
+        limits:
+          memory: "16Mi"
+        requests:
+          memory: "16Mi"
+---
+# CrashLoopBackOff: starts, then exits non-zero
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-7
+  namespace: demo
+  labels: { app: worker }
+spec:
+  restartPolicy: Always
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'booting worker'; sleep 2; echo 'FATAL: cannot connect to db'; exit 1"]
+---
+# ImagePullBackOff: image/tag does not exist
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api-3
+  namespace: demo
+  labels: { app: api }
+spec:
+  restartPolicy: Always
+  containers:
+    - name: api
+      image: nginx:no-such-tag-9999

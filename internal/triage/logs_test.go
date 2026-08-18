@@ -40,3 +40,22 @@ func TestDetectErrors(t *testing.T) {
 		t.Fatalf("expected 2 error lines, got %v", got)
 	}
 }
+
+func TestLogBodyUnavailable(t *testing.T) {
+	// The kubelet returns HTTP 200 with this body (not an error status) when a
+	// previous container's logs are no longer on disk. It must be treated as a
+	// miss so triage falls back to current logs.
+	cases := map[string]bool{
+		"unable to retrieve container logs for containerd://3f801cacd07f": true,
+		"unable to retrieve container logs for docker://abc123":           true,
+		"":      true,
+		"   \n": true,
+		"booting worker\nFATAL: cannot connect to db": false,
+		"a normal log line mentioning container logs": false,
+	}
+	for body, want := range cases {
+		if got := logBodyUnavailable(body); got != want {
+			t.Errorf("logBodyUnavailable(%q) = %v, want %v", body, got, want)
+		}
+	}
+}
