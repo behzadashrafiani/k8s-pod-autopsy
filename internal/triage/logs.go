@@ -96,7 +96,7 @@ func fetchContainerLog(ctx context.Context, kube kubernetes.Interface, ns, pod, 
 	if err != nil {
 		return "", err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	b, err := io.ReadAll(rc)
 	if err != nil {
 		return "", err
