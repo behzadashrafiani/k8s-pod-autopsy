@@ -2,6 +2,10 @@
 
 **Read-only Kubernetes pod triage that synthesizes crash / OOM / waiting / saturation root-cause into a token-thrifty markdown digest.** Works as a CLI *and* as an MCP server, so your AI assistant can root-cause a pod without you pasting a wall of `kubectl describe` output.
 
+![autopsy in action: scanning a namespace, then root-causing an OOMKilled and a CrashLoopBackOff pod](docs/demo/autopsy.gif)
+
+> Real output against a live cluster — a namespace scan, an OOMKilled pod, and a crash-looping worker (with its actual error logs). Recorded with [VHS](https://github.com/charmbracelet/vhs); regenerate via `vhs docs/demo/autopsy.tape`.
+
 ```
 autopsy triage web-1 -n demo
 ```
