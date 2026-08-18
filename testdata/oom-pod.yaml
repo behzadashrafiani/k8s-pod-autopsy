@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: { name: web-1, namespace: demo }
+spec:
+  containers:
+    - name: web
+      image: web:1
+      resources: { limits: { memory: 256Mi } }
+status:
+  phase: Running
+  containerStatuses:
+    - name: web
+      restartCount: 2
+      lastState: { terminated: { exitCode: 137, reason: OOMKilled } }
+      state: { waiting: { reason: CrashLoopBackOff } }

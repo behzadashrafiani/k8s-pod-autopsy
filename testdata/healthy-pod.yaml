@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata: { name: web-healthy, namespace: demo }
+spec:
+  containers:
+    - name: web
+      image: web:1
+      resources:
+        requests: { cpu: 100m, memory: 128Mi }
+        limits: { cpu: 500m, memory: 512Mi }
+status:
+  phase: Running
+  containerStatuses:
+    - name: web
+      ready: true
+      restartCount: 0
+      state: { running: { startedAt: "2026-08-17T10:00:00Z" } }
