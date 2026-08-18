@@ -11,7 +11,7 @@ type Styler interface {
 
 type plain struct{}
 
-func PlainStyler() Styler              { return plain{} }
+func PlainStyler() Styler             { return plain{} }
 func (plain) Heading(s string) string { return s }
 func (plain) Danger(s string) string  { return s }
 func (plain) Dim(s string) string     { return s }

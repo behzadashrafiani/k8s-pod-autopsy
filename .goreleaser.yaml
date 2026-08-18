@@ -1,0 +1,14 @@
+version: 2
+builds:
+  - main: ./cmd/autopsy
+    binary: autopsy
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+brews:
+  - repository:
+      owner: behzadashrafiani
+      name: homebrew-tap
+    name: k8s-pod-autopsy
+dockers:
+  - image_templates: ["ghcr.io/behzadashrafiani/k8s-pod-autopsy:{{ .Version }}"]
